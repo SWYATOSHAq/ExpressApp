@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Мини Kanban</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        ul { list-style: none; padding: 0; }
+        li { margin-bottom: 10px; }
+        button { margin-left: 5px; }
+    </style>
+</head>
+<body>
+<h1>Мини Kanban</h1>
+
+<form id="form">
+    <input name="title" placeholder="Новая задача" required>
+    <button>Добавить</button>
+</form>
+
+<ul id="list"></ul>
+
+<script>
+async function load() {
+    const res = await fetch('/api/tasks');
+    const tasks = await res.json();
+    const list = document.getElementById('list');
+    list.innerHTML = '';
+
+    tasks.forEach(t => {
+        list.innerHTML += `
+        <li>
+            <b>${t.title}</b> — <span>${t.status}</span>
+            <button onclick="changeStatus(${t.id}, 'todo')">Todo</button>
+            <button onclick="changeStatus(${t.id}, 'in-progress')">In Progress</button>
+            <button onclick="changeStatus(${t.id}, 'done')">Done</button>
+        </li>`;
+    });
+}
+
+async function changeStatus(id, status) {
+    await fetch('/api/tasks/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+    });
+    load();
+}
+
+document.getElementById('form').onsubmit = async e => {
+    e.preventDefault();
+    const title = e.target.title.value;
+    await fetch('/api/tasks', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ title })
+    });
+    e.target.reset();
+    load();
+};
+
+// загрузка задач при открытии страницы
+load();
+</script>
+
+</body>
+</html>
